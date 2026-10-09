@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
   INITIAL_BANNERS,
   INITIAL_BUSINESS_PROFILE,
@@ -21,12 +21,35 @@ import {
   UserRole,
 } from '../types';
 import { getTheme, THEMES } from '../utils/themes';
+import {
+  firebaseInfo,
+  subscribeProducts,
+  subscribeIngredients,
+  subscribeOrders,
+  subscribeBanners,
+  subscribeBusinessProfile,
+  upsertProductFirestore,
+  deleteProductFirestore,
+  upsertIngredientFirestore,
+  deleteIngredientFirestore,
+  saveOrderFirestore,
+  updateOrderStatusFirestore,
+  upsertBannerFirestore,
+  deleteBannerFirestore,
+  saveBusinessProfileFirestore,
+  pushAllToFirestore,
+} from '../firebase';
 
 interface AppContextType {
   // Theme
   theme: ThemeConfig;
   themeId: ThemeId;
   setThemeId: (id: ThemeId) => void;
+
+  // Cloud / Firestore
+  firebaseSyncStatus: 'synced' | 'syncing' | 'offline' | 'error';
+  firebaseInfo: typeof firebaseInfo;
+  syncAllToFirestore: () => Promise<void>;
 
   // Business Profile
   businessProfile: BusinessProfile;
@@ -121,10 +144,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const theme = getTheme(themeId);
 
+  // Firestore Sync State
+  const [firebaseSyncStatus, setFirebaseSyncStatus] = useState<'synced' | 'syncing' | 'offline' | 'error'>('synced');
+  const isCloudLoadedRef = useRef(false);
+
   const setThemeId = (newId: ThemeId) => {
     setThemeIdState(newId);
     localStorage.setItem(STORAGE_KEYS.THEME, newId);
-    setBusinessProfileState((prev) => ({ ...prev, currentTheme: newId }));
+    setBusinessProfileState((prev) => {
+      const updated = { ...prev, currentTheme: newId };
+      saveBusinessProfileFirestore(updated).catch(() => {});
+      return updated;
+    });
   };
 
   // Business Profile
@@ -144,6 +175,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBusinessProfileState((prev) => {
       const updated = { ...prev, ...partial };
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+      saveBusinessProfileFirestore(updated).catch((err) => console.warn('Firestore profile sync error:', err));
       return updated;
     });
   };
@@ -178,15 +210,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const id = `ing-${Date.now()}`;
     const newIng: Ingredient = { ...ingredient, id };
     setIngredients((prev) => [newIng, ...prev]);
+    upsertIngredientFirestore(newIng).catch((err) => console.warn('Firestore addIngredient error:', err));
     return id;
   };
 
   const updateIngredient = (id: string, updates: Partial<Ingredient>) => {
-    setIngredients((prev) => prev.map((ing) => (ing.id === id ? { ...ing, ...updates } : ing)));
+    setIngredients((prev) => {
+      const updated = prev.map((ing) => (ing.id === id ? { ...ing, ...updates } : ing));
+      const target = updated.find((i) => i.id === id);
+      if (target) {
+        upsertIngredientFirestore(target).catch((err) => console.warn('Firestore updateIngredient error:', err));
+      }
+      return updated;
+    });
   };
 
   const deleteIngredient = (id: string) => {
     setIngredients((prev) => prev.filter((ing) => ing.id !== id));
+    deleteIngredientFirestore(id).catch((err) => console.warn('Firestore deleteIngredient error:', err));
     // Also remove reference from any product recipe and options
     setProducts((prev) =>
       prev.map((p) => ({
@@ -207,14 +248,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const adjustIngredientStock = (id: string, delta: number) => {
-    setIngredients((prev) =>
-      prev.map((ing) => {
+    setIngredients((prev) => {
+      const updated = prev.map((ing) => {
         if (ing.id === id) {
           return { ...ing, stock: Math.max(0, ing.stock + delta) };
         }
         return ing;
-      })
-    );
+      });
+      const target = updated.find((i) => i.id === id);
+      if (target) {
+        upsertIngredientFirestore(target).catch((err) => console.warn('Firestore adjustIngredientStock error:', err));
+      }
+      return updated;
+    });
   };
 
   // Products
@@ -236,7 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts((prev) => {
       let changed = false;
       const updated = prev.map((p) => {
-        const initial = INITIAL_PRODUCTS.find((init) => init.id === p.id);
+        const initial = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
         if (!initial) return p;
 
         let pChanged = false;
@@ -289,33 +335,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const id = `prod-${Date.now()}`;
     const newProduct: Product = { ...product, id };
     setProducts((prev) => [newProduct, ...prev]);
+    upsertProductFirestore(newProduct).catch((err) => console.warn('Firestore addProduct error:', err));
     return id;
   };
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    setProducts((prev) => {
+      const updated = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+      const target = updated.find((p) => p.id === id);
+      if (target) {
+        upsertProductFirestore(target).catch((err) => console.warn('Firestore updateProduct error:', err));
+      }
+      return updated;
+    });
   };
 
   const deleteProduct = (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    deleteProductFirestore(id).catch((err) => console.warn('Firestore deleteProduct error:', err));
   };
 
   const adjustStock = (id: string, delta: number) => {
-    setProducts((prev) =>
-      prev.map((p) => {
+    setProducts((prev) => {
+      const updated = prev.map((p) => {
         if (p.id === id) {
           const newStock = Math.max(0, p.stock + delta);
           return { ...p, stock: newStock };
         }
         return p;
-      })
-    );
+      });
+      const target = updated.find((p) => p.id === id);
+      if (target) {
+        upsertProductFirestore(target).catch((err) => console.warn('Firestore adjustStock error:', err));
+      }
+      return updated;
+    });
   };
 
   const setProductRecipe = (productId: string, recipe: ProductRecipeItem[]) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, recipe } : p))
-    );
+    setProducts((prev) => {
+      const updated = prev.map((p) => (p.id === productId ? { ...p, recipe } : p));
+      const target = updated.find((p) => p.id === productId);
+      if (target) {
+        upsertProductFirestore(target).catch((err) => console.warn('Firestore setProductRecipe error:', err));
+      }
+      return updated;
+    });
   };
 
   const clearProductRecipe = (productId: string) => {
@@ -324,12 +389,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearAllRecipes = () => {
     localStorage.setItem(STORAGE_KEYS.RECIPES_CLEARED, 'true');
-    setProducts((prev) =>
-      prev.map((p) => ({
+    setProducts((prev) => {
+      const updated = prev.map((p) => ({
         ...p,
         recipe: [],
-      }))
-    );
+      }));
+      updated.forEach((p) => {
+        upsertProductFirestore(p).catch(() => {});
+      });
+      return updated;
+    });
   };
 
   // Banners
@@ -353,19 +422,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const id = `ban-${Date.now()}`;
     const newBanner: PromoBanner = { ...banner, id };
     setBanners((prev) => [newBanner, ...prev]);
+    upsertBannerFirestore(newBanner).catch((err) => console.warn('Firestore addBanner error:', err));
     return id;
   };
 
   const updateBanner = (id: string, updates: Partial<PromoBanner>) => {
-    setBanners((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+    setBanners((prev) => {
+      const updated = prev.map((b) => (b.id === id ? { ...b, ...updates } : b));
+      const target = updated.find((b) => b.id === id);
+      if (target) {
+        upsertBannerFirestore(target).catch((err) => console.warn('Firestore updateBanner error:', err));
+      }
+      return updated;
+    });
   };
 
   const deleteBanner = (id: string) => {
     setBanners((prev) => prev.filter((b) => b.id !== id));
+    deleteBannerFirestore(id).catch((err) => console.warn('Firestore deleteBanner error:', err));
   };
 
   const toggleBannerActive = (id: string) => {
-    setBanners((prev) => prev.map((b) => (b.id === id ? { ...b, active: !b.active } : b)));
+    setBanners((prev) => {
+      const updated = prev.map((b) => (b.id === id ? { ...b, active: !b.active } : b));
+      const target = updated.find((b) => b.id === id);
+      if (target) {
+        upsertBannerFirestore(target).catch((err) => console.warn('Firestore toggleBannerActive error:', err));
+      }
+      return updated;
+    });
   };
 
   // Orders: Cleaned empty registry
@@ -439,10 +524,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prev.map((ing) => {
           const toDeduct = ingredientDeductions[ing.id];
           if (toDeduct && toDeduct > 0) {
-            return {
-              ...ing,
-              stock: Math.max(0, ing.stock - toDeduct),
-            };
+            const updatedStock = Math.max(0, ing.stock - toDeduct);
+            const updated = { ...ing, stock: updatedStock };
+            upsertIngredientFirestore(updated).catch(() => {});
+            return updated;
           }
           return ing;
         })
@@ -450,15 +535,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setOrders((prev) => [newOrder, ...prev]);
+    saveOrderFirestore(newOrder).catch((err) => console.warn('Firestore saveOrder error:', err));
     return newOrder;
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    updateOrderStatusFirestore(orderId, status).catch((err) => console.warn('Firestore updateOrderStatus error:', err));
   };
 
   const markOrderPaymentReceived = (orderId: string, received: boolean) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, paymentReceived: received } : o)));
+    const target = orders.find((o) => o.id === orderId);
+    if (target) {
+      updateOrderStatusFirestore(orderId, target.status, received).catch((err) => console.warn('Firestore markOrder error:', err));
+    }
   };
 
   const deleteOrder = (orderId: string) => {
@@ -473,6 +564,113 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOrders([]);
     localStorage.removeItem(STORAGE_KEYS.ORDERS);
   };
+
+  // Synchronize All Local Data to Firestore on Demand
+  const syncAllToFirestore = async () => {
+    setFirebaseSyncStatus('syncing');
+    try {
+      await pushAllToFirestore({
+        products,
+        ingredients,
+        banners,
+        orders,
+        profile: businessProfile,
+      });
+      setFirebaseSyncStatus('synced');
+    } catch (e) {
+      console.error('Error syncing all data to Firestore:', e);
+      setFirebaseSyncStatus('error');
+      throw e;
+    }
+  };
+
+  // Real-time Firestore Listeners
+  useEffect(() => {
+    let isMounted = true;
+
+    const unsubProducts = subscribeProducts(
+      (remoteProducts) => {
+        if (!isMounted) return;
+        if (remoteProducts.length > 0) {
+          setProducts(remoteProducts);
+          isCloudLoadedRef.current = true;
+          setFirebaseSyncStatus('synced');
+        } else if (!isCloudLoadedRef.current) {
+          // If cloud has 0 products yet, seed them automatically once!
+          pushAllToFirestore({
+            products,
+            ingredients,
+            banners,
+            orders,
+            profile: businessProfile,
+          })
+            .then(() => {
+              if (isMounted) setFirebaseSyncStatus('synced');
+            })
+            .catch(() => {});
+        }
+      },
+      () => {
+        if (isMounted) setFirebaseSyncStatus('offline');
+      }
+    );
+
+    const unsubIngredients = subscribeIngredients(
+      (remoteIngredients) => {
+        if (!isMounted) return;
+        if (remoteIngredients.length > 0) {
+          setIngredients(remoteIngredients);
+          setFirebaseSyncStatus('synced');
+        }
+      },
+      () => {}
+    );
+
+    const unsubOrders = subscribeOrders(
+      (remoteOrders) => {
+        if (!isMounted) return;
+        if (remoteOrders.length > 0) {
+          setOrders(remoteOrders);
+          setFirebaseSyncStatus('synced');
+        }
+      },
+      () => {}
+    );
+
+    const unsubBanners = subscribeBanners(
+      (remoteBanners) => {
+        if (!isMounted) return;
+        if (remoteBanners.length > 0) {
+          setBanners(remoteBanners);
+          setFirebaseSyncStatus('synced');
+        }
+      },
+      () => {}
+    );
+
+    const unsubProfile = subscribeBusinessProfile(
+      (remoteProfile) => {
+        if (!isMounted) return;
+        if (remoteProfile && remoteProfile.name) {
+          setBusinessProfileState(remoteProfile);
+          if (remoteProfile.currentTheme) {
+            setThemeIdState(remoteProfile.currentTheme);
+          }
+          setFirebaseSyncStatus('synced');
+        }
+      },
+      () => {}
+    );
+
+    return () => {
+      isMounted = false;
+      unsubProducts();
+      unsubIngredients();
+      unsubOrders();
+      unsubBanners();
+      unsubProfile();
+    };
+  }, []);
 
   // Auth / Current User
   const [currentUser, setCurrentUser] = useState<CurrentUser>(() => {
@@ -599,6 +797,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         theme,
         themeId,
         setThemeId,
+        firebaseSyncStatus,
+        firebaseInfo,
+        syncAllToFirestore,
         businessProfile,
         updateBusinessProfile,
         resetToDefaultData,

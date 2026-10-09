@@ -8,6 +8,12 @@ import {
   Building2,
   Flame,
   Coffee,
+  Database,
+  ExternalLink,
+  RefreshCw,
+  Cloud,
+  Check,
+  Copy,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { GoogleDriveInput } from '../common/GoogleDriveInput';
@@ -21,6 +27,13 @@ export const AdminSettings: React.FC = () => {
     themeId,
     setThemeId,
     theme,
+    firebaseSyncStatus,
+    firebaseInfo,
+    syncAllToFirestore,
+    products,
+    ingredients,
+    orders,
+    banners,
   } = useApp();
 
   const [name, setName] = useState(businessProfile.name);
@@ -32,6 +45,31 @@ export const AdminSettings: React.FC = () => {
   const [phone, setPhone] = useState(businessProfile.phone);
   const [address, setAddress] = useState(businessProfile.address);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccessMessage, setSyncSuccessMessage] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    setSyncSuccessMessage(null);
+    try {
+      await syncAllToFirestore();
+      setSyncSuccessMessage('¡Todos los datos se han subido y sincronizado exitosamente con Firestore!');
+      setTimeout(() => setSyncSuccessMessage(null), 4000);
+    } catch {
+      setSyncSuccessMessage('Error al sincronizar. Revisa la conexión a internet.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCopyConsoleUrl = () => {
+    if (firebaseInfo.consoleUrl) {
+      navigator.clipboard.writeText(firebaseInfo.consoleUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2500);
+    }
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +140,116 @@ export const AdminSettings: React.FC = () => {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* GESTIÓN DE BASE DE DATOS FIRESTORE */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                <span>Base de Datos Firestore (Nube)</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Conectada
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                Sincronización en tiempo real para el proyecto MultiRestaurant
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                isSyncing
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300 shadow-2xs active:scale-95'
+              }`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-orange-500' : 'text-slate-600'}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Subir y Sincronizar Todo a Firestore'}</span>
+            </button>
+
+            <a
+              href={firebaseInfo.consoleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-2xs transition-all flex items-center gap-1.5 active:scale-95"
+            >
+              <span>Ver en Firebase Console</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        {syncSuccessMessage && (
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{syncSuccessMessage}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">Proyecto de Firebase</span>
+            <div className="font-bold text-slate-900 truncate">MultiRestaurant</div>
+            <div className="text-[10px] text-slate-400 font-mono truncate">{firebaseInfo.projectId}</div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">Base de Datos Firestore</span>
+            <div className="font-bold text-slate-900 truncate">Empresarial / AI Studio</div>
+            <div className="text-[10px] text-slate-400 font-mono truncate" title={firebaseInfo.databaseId}>
+              {firebaseInfo.databaseId.substring(0, 24)}...
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">Colecciones Activas</span>
+            <div className="font-bold text-slate-900">5 Colecciones</div>
+            <div className="text-[10px] text-slate-500">products, ingredients, orders, banners, profiles</div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+            <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">Documentos en Memoria</span>
+            <div className="font-bold text-emerald-700">
+              {products.length} prod. / {ingredients.length} insumos / {orders.length} pedidos
+            </div>
+            <div className="text-[10px] text-slate-500">Sincronización bidireccional</div>
+          </div>
+        </div>
+
+        <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/70 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="font-bold flex items-center gap-1.5">
+              <Cloud className="w-4 h-4 text-amber-600" />
+              <span>¿Cómo acceder a tu base de datos en Google Firebase?</span>
+            </div>
+            <p className="text-[11px] text-amber-800">
+              1. Haz clic en el botón <strong>&quot;Ver en Firebase Console&quot;</strong> arriba o entra a{' '}
+              <span className="underline font-mono">console.firebase.google.com</span>.<br />
+              2. En el menú izquierdo ve a <strong>Compilación ➔ Firestore Database</strong>.<br />
+              3. En la pestaña <strong>Datos</strong> verás las colecciones en vivo de tus productos, recetas, inventario central y pedidos.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopyConsoleUrl}
+            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg font-semibold text-[11px] flex items-center gap-1.5 self-start sm:self-auto shrink-0 transition-colors"
+          >
+            {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedUrl ? '¡Enlace Copiado!' : 'Copiar URL Consola'}</span>
+          </button>
         </div>
       </div>
 
