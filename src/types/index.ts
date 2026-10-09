@@ -126,6 +126,7 @@ export interface CashPaymentDetail {
 export interface Order {
   id: string;
   orderNumber: string; // e.g. "PED-108"
+  orderType?: 'recoger'; // Exclusivo: solo para recoger en local / pickup
   customerName: string;
   customerPhone: string;
   customerNotes?: string;

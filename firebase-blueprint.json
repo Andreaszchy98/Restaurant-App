@@ -47,6 +47,7 @@
       "properties": {
         "id": { "type": "string", "maxLength": 128 },
         "orderNumber": { "type": "string", "maxLength": 50 },
+        "orderType": { "type": "string", "enum": ["recoger"] },
         "customerName": { "type": "string", "maxLength": 200 },
         "customerPhone": { "type": "string", "maxLength": 50 },
         "customerNotes": { "type": "string", "maxLength": 1000 },

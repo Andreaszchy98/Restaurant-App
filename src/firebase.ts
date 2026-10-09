@@ -115,9 +115,13 @@ export function subscribeProducts(
       onSuccess(items);
     },
     (err) => {
-      console.error('Products listener error:', err);
+      console.warn('Products listener error:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, path);
+      try {
+        handleFirestoreError(err, OperationType.LIST, path);
+      } catch (_) {
+        // Logged
+      }
     }
   );
 }
@@ -176,9 +180,13 @@ export function subscribeIngredients(
       onSuccess(items);
     },
     (err) => {
-      console.error('Ingredients listener error:', err);
+      console.warn('Ingredients listener error:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, path);
+      try {
+        handleFirestoreError(err, OperationType.LIST, path);
+      } catch (_) {
+        // Logged
+      }
     }
   );
 }
@@ -230,9 +238,13 @@ export function subscribeOrders(
       onSuccess(items);
     },
     (err) => {
-      console.error('Orders listener error:', err);
+      console.warn('Orders listener error:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, path);
+      try {
+        handleFirestoreError(err, OperationType.LIST, path);
+      } catch (_) {
+        // Logged
+      }
     }
   );
 }
@@ -243,6 +255,7 @@ export async function saveOrderFirestore(order: Order): Promise<void> {
     const payload = {
       id: order.id,
       orderNumber: order.orderNumber,
+      orderType: order.orderType || 'recoger',
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       customerNotes: order.customerNotes || '',
@@ -291,9 +304,13 @@ export function subscribeBanners(
       onSuccess(items);
     },
     (err) => {
-      console.error('Banners listener error:', err);
+      console.warn('Banners listener error:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, path);
+      try {
+        handleFirestoreError(err, OperationType.LIST, path);
+      } catch (_) {
+        // Logged
+      }
     }
   );
 }
@@ -341,9 +358,13 @@ export function subscribeBusinessProfile(
       }
     },
     (err) => {
-      console.error('BusinessProfile listener error:', err);
+      console.warn('BusinessProfile listener error:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.GET, path);
+      try {
+        handleFirestoreError(err, OperationType.GET, path);
+      } catch (_) {
+        // Logged
+      }
     }
   );
 }
@@ -357,7 +378,7 @@ export async function saveBusinessProfileFirestore(profile: BusinessProfile): Pr
   }
 }
 
-// --- Batch Initial Seed / Push to Cloud ---
+// --- Batch Push to Cloud (Explicit Only, Never Offline) ---
 export async function pushAllToFirestore(data: {
   products: Product[];
   ingredients: Ingredient[];
@@ -365,6 +386,11 @@ export async function pushAllToFirestore(data: {
   orders: Order[];
   profile: BusinessProfile;
 }): Promise<void> {
+  // Guard against seeding/syncing offline to avoid database discrepancies
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    console.warn('Sincronización cancelada: No se puede sembrar o sincronizar datos sin conexión a internet.');
+    return;
+  }
   const batch = writeBatch(db);
 
   // Profile

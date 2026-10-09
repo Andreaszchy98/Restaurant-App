@@ -185,21 +185,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.INGREDIENTS);
     if (saved) {
       try {
-        const parsed: Ingredient[] = JSON.parse(saved);
-        // Merge missing default ingredients if any
-        const missing = INITIAL_INGREDIENTS.filter(
-          (init) => !parsed.some((p) => p.id === init.id)
-        );
-        if (missing.length > 0) {
-          const merged = [...parsed, ...missing];
-          return merged;
-        }
-        return parsed;
+        return JSON.parse(saved);
       } catch (e) {
         console.error(e);
       }
     }
-    return INITIAL_INGREDIENTS;
+    return [];
   });
 
   useEffect(() => {
@@ -273,59 +264,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error(e);
       }
     }
-    return INITIAL_PRODUCTS;
+    return [];
   });
-
-  // Ensure initial products have recipes and option ingredients loaded if from pre-existing localStorage
-  useEffect(() => {
-    const isRecipesCleared = localStorage.getItem(STORAGE_KEYS.RECIPES_CLEARED) === 'true';
-    setProducts((prev) => {
-      let changed = false;
-      const updated = prev.map((p) => {
-        const initial = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
-        if (!initial) return p;
-
-        let pChanged = false;
-        let newRecipe = p.recipe;
-        if (!isRecipesCleared && initial.recipe && (!p.recipe || p.recipe.length === 0)) {
-          newRecipe = initial.recipe;
-          pChanged = true;
-        }
-
-        // Sync option ingredients if missing
-        let newOptionGroups = p.optionGroups;
-        if (initial.optionGroups && p.optionGroups) {
-          const syncedGroups = p.optionGroups.map((g) => {
-            const initGroup = initial.optionGroups.find((ig) => ig.id === g.id);
-            if (!initGroup) return g;
-            const syncedOptions = g.options.map((opt) => {
-              const initOpt = initGroup.options.find((io) => io.id === opt.id);
-              if (initOpt?.extraIngredientId && !opt.extraIngredientId) {
-                pChanged = true;
-                return {
-                  ...opt,
-                  extraIngredientId: initOpt.extraIngredientId,
-                  extraIngredientQuantity: initOpt.extraIngredientQuantity,
-                };
-              }
-              return opt;
-            });
-            return { ...g, options: syncedOptions };
-          });
-          if (pChanged) {
-            newOptionGroups = syncedGroups;
-          }
-        }
-
-        if (pChanged) {
-          changed = true;
-          return { ...p, recipe: newRecipe, optionGroups: newOptionGroups };
-        }
-        return p;
-      });
-      return changed ? updated : prev;
-    });
-  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
@@ -411,7 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error(e);
       }
     }
-    return INITIAL_BANNERS;
+    return [];
   });
 
   useEffect(() => {
@@ -478,6 +418,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...orderData,
       id: `ord-${Date.now()}`,
       orderNumber,
+      orderType: 'recoger',
       createdAt: new Date().toISOString(),
     };
 
@@ -567,6 +508,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Synchronize All Local Data to Firestore on Demand
   const syncAllToFirestore = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      console.warn('Operación cancelada: No se puede sincronizar con la base de datos sin conexión.');
+      setFirebaseSyncStatus('offline');
+      return;
+    }
     setFirebaseSyncStatus('syncing');
     try {
       await pushAllToFirestore({
@@ -584,75 +530,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Real-time Firestore Listeners
+  // Real-time Firestore Listeners - Single source of truth is always Firestore
   useEffect(() => {
     let isMounted = true;
 
+    // Detect browser online/offline status
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setFirebaseSyncStatus('offline');
+    }
+
+    const handleOnline = () => {
+      if (isMounted) setFirebaseSyncStatus('synced');
+    };
+    const handleOffline = () => {
+      if (isMounted) setFirebaseSyncStatus('offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Subscribe to products directly from database without any automatic seeding
     const unsubProducts = subscribeProducts(
       (remoteProducts) => {
         if (!isMounted) return;
-        if (remoteProducts.length > 0) {
-          setProducts(remoteProducts);
-          isCloudLoadedRef.current = true;
-          setFirebaseSyncStatus('synced');
-        } else if (!isCloudLoadedRef.current) {
-          // If cloud has 0 products yet, seed them automatically once!
-          pushAllToFirestore({
-            products,
-            ingredients,
-            banners,
-            orders,
-            profile: businessProfile,
-          })
-            .then(() => {
-              if (isMounted) setFirebaseSyncStatus('synced');
-            })
-            .catch(() => {});
-        }
+        setProducts(remoteProducts);
+        isCloudLoadedRef.current = true;
+        setFirebaseSyncStatus('synced');
       },
       () => {
         if (isMounted) setFirebaseSyncStatus('offline');
       }
     );
 
+    // Subscribe to ingredients directly from database
     const unsubIngredients = subscribeIngredients(
       (remoteIngredients) => {
         if (!isMounted) return;
-        if (remoteIngredients.length > 0) {
-          setIngredients(remoteIngredients);
-          setFirebaseSyncStatus('synced');
-        }
+        setIngredients(remoteIngredients);
+        setFirebaseSyncStatus('synced');
       },
       () => {}
     );
 
+    // Subscribe to orders directly from database
     const unsubOrders = subscribeOrders(
       (remoteOrders) => {
         if (!isMounted) return;
-        if (remoteOrders.length > 0) {
-          setOrders(remoteOrders);
-          setFirebaseSyncStatus('synced');
-        }
+        setOrders(remoteOrders);
+        setFirebaseSyncStatus('synced');
       },
       () => {}
     );
 
+    // Subscribe to promotional banners directly from database
     const unsubBanners = subscribeBanners(
       (remoteBanners) => {
         if (!isMounted) return;
-        if (remoteBanners.length > 0) {
-          setBanners(remoteBanners);
-          setFirebaseSyncStatus('synced');
-        }
+        setBanners(remoteBanners);
+        setFirebaseSyncStatus('synced');
       },
       () => {}
     );
 
+    // Subscribe to business profile
     const unsubProfile = subscribeBusinessProfile(
       (remoteProfile) => {
         if (!isMounted) return;
         if (remoteProfile && remoteProfile.name) {
-          setBusinessProfileState(remoteProfile);
+          setBusinessProfileState((prev) => ({ ...prev, ...remoteProfile }));
           if (remoteProfile.currentTheme) {
             setThemeIdState(remoteProfile.currentTheme);
           }
@@ -664,6 +609,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => {
       isMounted = false;
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       unsubProducts();
       unsubIngredients();
       unsubOrders();

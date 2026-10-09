@@ -12,6 +12,7 @@ import {
   User,
   XCircle,
   Trash2,
+  Store,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Order, OrderStatus } from '../../types';
@@ -157,6 +158,10 @@ export const AdminSalesOrders: React.FC = () => {
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-mono text-base font-extrabold text-slate-900">
                       {order.orderNumber}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                      <Store className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Para Recoger</span>
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusInfo.bg}`}
@@ -332,6 +337,7 @@ export const AdminSalesOrders: React.FC = () => {
             </div>
 
             <div className="space-y-1 text-[11px]">
+              <div><strong>Modalidad:</strong> <span className="font-bold text-blue-700">Para Recoger en Local</span></div>
               <div><strong>Cliente:</strong> {ticketOrder.customerName} ({ticketOrder.customerPhone})</div>
               {ticketOrder.customerNotes && <div><strong>Notas:</strong> {ticketOrder.customerNotes}</div>}
             </div>

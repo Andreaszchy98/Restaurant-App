@@ -163,7 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             /* Client Form */
             <form onSubmit={handleLoginAsClient} className="space-y-3.5 text-xs">
               <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl text-emerald-950 text-[11px] leading-relaxed">
-                <strong>Perfil de Cliente:</strong> Podrás navegar el menú, personalizar tus órdenes, pedir a domicilio o retiro y pagar en efectivo.
+                <strong>Perfil de Cliente:</strong> Podrás navegar el menú, personalizar tus órdenes, pedir exclusivamente para recoger en el local y pagar en efectivo.
               </div>
 
               <div>

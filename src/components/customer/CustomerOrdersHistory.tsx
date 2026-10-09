@@ -8,6 +8,7 @@ import {
   DollarSign,
   AlertCircle,
   Printer,
+  Store,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Order, OrderStatus } from '../../types';
@@ -99,9 +100,13 @@ export const CustomerOrdersHistory: React.FC = () => {
                 {/* Top Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono font-bold text-base text-slate-900">
                         {order.orderNumber}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                        <Store className="w-3 h-3 text-blue-600" />
+                        <span>Para Recoger</span>
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusInfo.bg}`}
@@ -241,6 +246,10 @@ export const CustomerOrdersHistory: React.FC = () => {
 
             {/* Ticket Details */}
             <div className="space-y-1 text-[11px]">
+              <div className="flex justify-between">
+                <span>Tipo de Pedido:</span>
+                <span className="font-bold text-blue-700">Para Recoger en Local</span>
+              </div>
               <div className="flex justify-between">
                 <span>Fecha:</span>
                 <span>{new Date(ticketOrder.createdAt).toLocaleString('es-ES')}</span>

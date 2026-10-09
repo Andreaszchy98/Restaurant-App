@@ -13,6 +13,9 @@ import {
   User,
   Phone,
   FileText,
+  Store,
+  MapPin,
+  Clock,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -141,6 +144,10 @@ export const CartDrawer: React.FC = () => {
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-left text-xs space-y-1.5">
                 <div className="flex justify-between font-semibold text-slate-800">
+                  <span>Modalidad:</span>
+                  <span className="text-blue-600 font-bold">Para Recoger en Local</span>
+                </div>
+                <div className="flex justify-between font-semibold text-slate-800">
                   <span>Método de pago:</span>
                   <span>Efectivo</span>
                 </div>
@@ -165,8 +172,28 @@ export const CartDrawer: React.FC = () => {
               </button>
             </div>
           ) : isCheckingOut ? (
-            /* Checkout Form (Simple, no delivery/zones) */
+            /* Checkout Form (Solo para recoger en tienda / pickup) */
             <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-4">
+              {/* Pickup Mode Notice */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
+                <Store className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                    <span>Modalidad de Pedido: Para Recoger</span>
+                    <span className="px-1.5 py-0.2 rounded text-[10px] bg-blue-200 text-blue-800 font-extrabold uppercase">
+                      Exclusivo
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed">
+                    Preparamos tu orden en nuestro establecimiento y estará lista para su retiro en:
+                  </p>
+                  <p className="text-[11px] font-semibold text-blue-950 flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                    <span>{businessProfile.address || 'Mostrador principal del local'}</span>
+                  </p>
+                </div>
+              </div>
+
               {/* Customer Contact Information */}
               <div className="space-y-3">
                 {checkoutError && (
@@ -211,7 +238,7 @@ export const CartDrawer: React.FC = () => {
 
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Notas o instrucciones adicionales
+                    Hora estimada de recogida o notas
                   </label>
                   <div className="relative">
                     <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -219,7 +246,7 @@ export const CartDrawer: React.FC = () => {
                       rows={2}
                       value={customerNotes}
                       onChange={(e) => setCustomerNotes(e.target.value)}
-                      placeholder="Ej: Para recoger a las 2pm, servido para llevar..."
+                      placeholder="Ej: Paso a recoger a las 2:30pm, empacar para llevar..."
                       className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                   </div>
