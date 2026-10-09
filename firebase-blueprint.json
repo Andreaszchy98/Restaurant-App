@@ -56,7 +56,7 @@
         "paymentMethod": { "type": "string", "enum": ["efectivo"] },
         "cashPayment": { "type": "object" },
         "paymentReceived": { "type": "boolean" },
-        "status": { "type": "string", "enum": ["pendiente", "en_preparacion", "entregado", "cancelado"] },
+        "status": { "type": "string", "enum": ["pendiente", "en_preparacion", "en_ruta", "entregado", "cancelado"] },
         "createdAt": { "type": "string", "maxLength": 50 }
       },
       "required": ["id", "orderNumber", "customerName", "customerPhone", "items", "total", "status", "createdAt"]

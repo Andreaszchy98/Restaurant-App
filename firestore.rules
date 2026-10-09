@@ -50,7 +50,7 @@ service cloud.firestore {
              data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 50 &&
              data.items is list && data.items.size() <= 100 &&
              data.total is number && data.total >= 0 &&
-             data.status in ['pendiente', 'en_preparacion', 'entregado', 'cancelado'] &&
+             data.status in ['pendiente', 'en_preparacion', 'en_ruta', 'entregado', 'cancelado'] &&
              data.createdAt is string && data.createdAt.size() <= 50;
     }
 

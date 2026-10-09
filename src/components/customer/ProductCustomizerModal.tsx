@@ -14,6 +14,7 @@ export const ProductCustomizerModal: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [imageError, setImageError] = useState(false);
 
   // Initialize default selections when modal opens
   useEffect(() => {
@@ -33,6 +34,7 @@ export const ProductCustomizerModal: React.FC = () => {
     setQuantity(1);
     setNotes('');
     setValidationErrors([]);
+    setImageError(false);
   }, [modalProductId, product]);
 
   if (!product) return null;
@@ -135,46 +137,77 @@ export const ProductCustomizerModal: React.FC = () => {
       {/* Modal Dialog Card */}
       <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] animate-in slide-in-from-bottom-4 duration-300">
         
-        {/* Mobile handle indicator */}
-        <div className="pt-2 pb-1 bg-white sm:hidden flex justify-center">
-          <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
-        </div>
+        {/* Case 1: Product with Image */}
+        {product.imageUrl && !imageError ? (
+          <div className="relative h-48 sm:h-56 w-full bg-slate-900 overflow-hidden shrink-0">
+            {/* Mobile handle indicator floating over photo */}
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 sm:hidden pointer-events-none">
+              <div className="w-12 h-1.5 bg-white/70 backdrop-blur-md rounded-full shadow-xs" />
+            </div>
 
-        {/* Close Button */}
-        <button
-          onClick={closeProductModal}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition-all hover:scale-105"
-          aria-label="Cerrar modal"
-        >
-          <X className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
+            {/* Close Button floating over photo */}
+            <button
+              onClick={closeProductModal}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md backdrop-blur-md border border-white/60 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              aria-label="Cerrar modal"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-        {/* Product Image Header (refined, non-aggressive presentation) */}
-        {product.imageUrl && (
-          <div className="relative h-44 sm:h-52 w-full bg-slate-100 overflow-hidden shrink-0 border-b border-slate-100">
+            {/* Product Image */}
             <img
               src={product.imageUrl}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
+              onError={() => setImageError(true)}
             />
-            {/* Soft gradient to keep photo clean while giving subtle depth */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-black/10 pointer-events-none" />
+
+            {/* Top & bottom gradient overlay for maximum contrast of controls and badges */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-black/35 pointer-events-none" />
 
             {/* Badges on image */}
-            <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-1.5 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-white/95 text-slate-800 shadow-xs backdrop-blur-xs">
+            <div className="absolute bottom-3 left-4 flex items-center gap-1.5 flex-wrap z-10">
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/95 text-slate-900 shadow-xs backdrop-blur-xs">
                 {product.category}
               </span>
               {product.badge && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-400 text-slate-950 shadow-xs flex items-center gap-1">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400 text-slate-950 shadow-xs flex items-center gap-1">
                   <Tag className="w-3 h-3" />
                   <span>{product.badge}</span>
                 </span>
               )}
+            </div>
+          </div>
+        ) : (
+          /* Case 2: Header when there is NO image or image fails */
+          <div className="relative shrink-0 border-b border-slate-100 bg-slate-50/70">
+            {/* Mobile handle indicator */}
+            <div className="pt-2.5 pb-1 flex justify-center sm:hidden">
+              <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+            </div>
+
+            <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800">
+                  {product.category}
+                </span>
+                {product.badge && (
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400 text-slate-950 flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    <span>{product.badge}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={closeProductModal}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors active:scale-95"
+                aria-label="Cerrar modal"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
             </div>
           </div>
         )}
