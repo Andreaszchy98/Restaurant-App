@@ -40,7 +40,7 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-slate-600" />
             <span className="font-semibold text-slate-800">
-              {businessProfile.name}
+              {businessProfile.name || 'Plataforma Comercial'}
             </span>
             <span>· Pagos en Efectivo & Envíos</span>
           </div>

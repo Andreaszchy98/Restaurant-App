@@ -71,11 +71,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm overflow-hidden relative shrink-0">
-              <span>{businessProfile.name.charAt(0)}</span>
+              <span>{businessProfile.name ? businessProfile.name.charAt(0).toUpperCase() : 'N'}</span>
               {businessProfile.logoUrl && (
                 <img
                   src={businessProfile.logoUrl}
-                  alt={businessProfile.name}
+                  alt={businessProfile.name || 'Negocio'}
                   className="absolute inset-0 w-full h-full object-cover bg-white"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
@@ -87,7 +87,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <div>
               <h3 className="font-bold text-slate-900 text-base">Iniciar Sesión / Acceso</h3>
               <p className="text-[11px] text-slate-500">
-                Selecciona tu perfil para ingresar a {businessProfile.name}
+                Selecciona tu perfil para ingresar a {businessProfile.name || 'la plataforma'}
               </p>
             </div>
           </div>

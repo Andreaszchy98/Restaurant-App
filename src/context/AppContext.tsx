@@ -163,7 +163,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          // If the cached profile has the seeded 'Valhalla' title, purge it so it never flashes
+          if (parsed.name && parsed.name.toLowerCase().includes('valhalla')) {
+            localStorage.removeItem(STORAGE_KEYS.PROFILE);
+            return INITIAL_BUSINESS_PROFILE;
+          }
+          return { ...INITIAL_BUSINESS_PROFILE, ...parsed };
+        }
       } catch (e) {
         console.error(e);
       }
@@ -598,6 +606,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!isMounted) return;
         if (remoteProfile && remoteProfile.name) {
           setBusinessProfileState((prev) => ({ ...prev, ...remoteProfile }));
+          try {
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(remoteProfile));
+          } catch (_) {}
           if (remoteProfile.currentTheme) {
             setThemeIdState(remoteProfile.currentTheme);
           }

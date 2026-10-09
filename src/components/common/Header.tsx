@@ -97,11 +97,15 @@ export const Header: React.FC = () => {
           {/* Business Name Branding */}
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-white/10 text-white font-black text-sm flex items-center justify-center shrink-0 border border-white/20 shadow-2xs overflow-hidden relative">
-              <span>{businessProfile.name.charAt(0)}</span>
+              {businessProfile.name ? (
+                <span>{businessProfile.name.charAt(0).toUpperCase()}</span>
+              ) : (
+                <div className="w-3.5 h-3.5 rounded-xs bg-white/20 animate-pulse" />
+              )}
               {businessProfile.logoUrl && (
                 <img
                   src={businessProfile.logoUrl}
-                  alt={businessProfile.name}
+                  alt={businessProfile.name || 'Logo'}
                   className="absolute inset-0 w-full h-full object-cover bg-white"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
@@ -111,9 +115,13 @@ export const Header: React.FC = () => {
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-white truncate leading-tight">
-                {businessProfile.name}
-              </h1>
+              {businessProfile.name ? (
+                <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-white truncate leading-tight">
+                  {businessProfile.name}
+                </h1>
+              ) : (
+                <div className="h-4 w-32 bg-white/20 rounded animate-pulse my-0.5" />
+              )}
               {businessProfile.slogan && (
                 <p className="text-[10px] text-slate-300 truncate hidden sm:block">
                   {businessProfile.slogan}

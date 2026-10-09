@@ -33,6 +33,17 @@ export const AdminSettings: React.FC = () => {
   const [address, setAddress] = useState(businessProfile.address);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  React.useEffect(() => {
+    setName(businessProfile.name);
+    setLogoUrl(businessProfile.logoUrl || '');
+    setSlogan(businessProfile.slogan);
+    setCategory(businessProfile.category);
+    setCurrency(businessProfile.currency);
+    setCurrencyCode(businessProfile.currencyCode);
+    setPhone(businessProfile.phone);
+    setAddress(businessProfile.address);
+  }, [businessProfile]);
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateBusinessProfile({

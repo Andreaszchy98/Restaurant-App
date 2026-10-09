@@ -1,17 +1,17 @@
 import { BusinessProfile, Ingredient, Order, Product, PromoBanner } from '../types';
 
 export const INITIAL_BUSINESS_PROFILE: BusinessProfile = {
-  name: 'Valhalla Coffee & Craft Grill',
-  slogan: 'Sabores de autor, café de especialidad y gastronomía artesanal',
-  logoUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=200&auto=format&fit=crop&q=80',
+  name: '',
+  slogan: '',
+  logoUrl: '',
   category: 'Restaurante & Cafetería',
   currency: '$',
   currencyCode: 'MXN',
-  phone: '+52 55 1234 5678',
-  address: 'Av. Providencia 1420, Ciudad Central',
-  currentTheme: 'default', // Default: Claro con botones negros y letras blancas
+  phone: '',
+  address: '',
+  currentTheme: 'default',
   enableStockControl: true,
-  licenseCode: 'LIC-SKELETON-MULTI-2026-X99',
+  licenseCode: 'LIC-MULTI-2026',
 };
 
 export const INITIAL_PRODUCTS: Product[] = [

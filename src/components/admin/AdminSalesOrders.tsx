@@ -69,7 +69,7 @@ export const AdminSalesOrders: React.FC = () => {
 
   const generateWhatsAppLink = (order: Order) => {
     const text = encodeURIComponent(
-      `¡Hola ${order.customerName}! Te escribimos de *${businessProfile.name}* sobre tu pedido *#${order.orderNumber}*.\n` +
+      `¡Hola ${order.customerName}! Te escribimos de *${businessProfile.name || 'nuestro negocio'}* sobre tu pedido *#${order.orderNumber}*.\n` +
       `Estado actual: *${order.status.toUpperCase()}*.\n` +
       `Total: ${businessProfile.currency}${order.total} (Pago en Efectivo).\n` +
       `Cualquier consulta estamos atentos.`
@@ -326,7 +326,7 @@ export const AdminSalesOrders: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-slate-200 font-mono text-xs">
             <div className="text-center pb-3 border-b border-dashed border-slate-300 space-y-1">
               <h3 className="font-bold text-sm tracking-tight text-slate-900">
-                {businessProfile.name}
+                {businessProfile.name || 'Comanda Comercial'}
               </h3>
               <div className="font-bold text-slate-800 text-xs">
                 COMANDA COCINA & CAJA: {ticketOrder.orderNumber}

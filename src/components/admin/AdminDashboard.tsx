@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC = () => {
             Panel de Control Ejecutivo & Ventas
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Métricas del negocio, cobros en efectivo e inventario para: <strong>{businessProfile.name}</strong>
+            Métricas del negocio, cobros en efectivo e inventario para: <strong>{businessProfile.name || 'Mi Negocio'}</strong>
           </p>
         </div>
         <div className="flex items-center gap-2">

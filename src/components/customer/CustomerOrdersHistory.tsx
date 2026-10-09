@@ -234,7 +234,7 @@ export const CustomerOrdersHistory: React.FC = () => {
             {/* Ticket Header */}
             <div className="text-center pb-3 border-b border-dashed border-slate-300 space-y-1">
               <h3 className="font-bold text-sm tracking-tight text-slate-900">
-                {businessProfile.name}
+                {businessProfile.name || 'Ticket Comercial'}
               </h3>
               <p className="text-[11px] text-slate-500">{businessProfile.slogan}</p>
               <p className="text-[10px] text-slate-400">{businessProfile.address}</p>

@@ -138,7 +138,7 @@ export const CartDrawer: React.FC = () => {
                   #{confirmedOrderId}
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2">
-                  Hemos enviado tu pedido a <strong>{businessProfile.name}</strong>.
+                  Hemos enviado tu pedido a <strong>{businessProfile.name || 'nuestro local'}</strong>.
                 </p>
               </div>
 
