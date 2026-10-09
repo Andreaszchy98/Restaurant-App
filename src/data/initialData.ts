@@ -9,7 +9,7 @@ export const INITIAL_BUSINESS_PROFILE: BusinessProfile = {
   currencyCode: 'MXN',
   phone: '',
   address: '',
-  currentTheme: 'default',
+  currentTheme: 'rosa',
   enableStockControl: true,
   licenseCode: 'LIC-MULTI-2026',
 };

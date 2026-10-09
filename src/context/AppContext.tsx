@@ -112,13 +112,17 @@ interface AppContextType {
   isCartDrawerOpen: boolean;
   setIsCartDrawerOpen: (open: boolean) => void;
 
+  // Auth / Role Selector Modal
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
+
   // Active Admin Tab (Removed logistica)
   adminTab: 'resumen' | 'pedidos' | 'inventario' | 'catalogo' | 'banners' | 'configuracion';
   setAdminTab: (tab: 'resumen' | 'pedidos' | 'inventario' | 'catalogo' | 'banners' | 'configuracion') => void;
 
   // Active Customer Tab
-  customerTab: 'catalogo' | 'pedidos';
-  setCustomerTab: (tab: 'catalogo' | 'pedidos') => void;
+  customerTab: 'catalogo' | 'pedidos' | 'perfil';
+  setCustomerTab: (tab: 'catalogo' | 'pedidos' | 'perfil') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -139,7 +143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Theme state
   const [themeId, setThemeIdState] = useState<ThemeId>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.THEME) as ThemeId;
-    return saved && THEMES[saved] ? saved : 'default';
+    return saved && THEMES[saved] ? saved : 'rosa';
   });
 
   const theme = getTheme(themeId);
@@ -698,8 +702,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Modals & Navigation States
   const [modalProductId, setModalProductId] = useState<string | null>(null);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [adminTab, setAdminTab] = useState<'resumen' | 'pedidos' | 'inventario' | 'catalogo' | 'banners' | 'configuracion'>('resumen');
-  const [customerTab, setCustomerTab] = useState<'catalogo' | 'pedidos'>('catalogo');
+  const [customerTab, setCustomerTab] = useState<'catalogo' | 'pedidos' | 'perfil'>('catalogo');
 
   const openProductModal = (productId: string) => {
     setModalProductId(productId);
@@ -801,6 +806,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         closeProductModal,
         isCartDrawerOpen,
         setIsCartDrawerOpen,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
         adminTab,
         setAdminTab,
         customerTab,

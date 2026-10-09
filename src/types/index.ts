@@ -1,4 +1,4 @@
-export type ThemeId = 'default' | 'rojo' | 'cafe' | 'naranja';
+export type ThemeId = 'default' | 'rojo' | 'cafe' | 'naranja' | 'rosa' | 'crema';
 
 export interface ThemeConfig {
   id: ThemeId;

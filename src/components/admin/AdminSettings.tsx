@@ -8,6 +8,8 @@ import {
   Building2,
   Flame,
   Coffee,
+  Heart,
+  Sun,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { GoogleDriveInput } from '../common/GoogleDriveInput';
@@ -63,6 +65,8 @@ export const AdminSettings: React.FC = () => {
 
   const themeList: Array<{ id: ThemeId; icon: React.ReactNode }> = [
     { id: 'default', icon: <Palette className="w-4 h-4" /> },
+    { id: 'rosa', icon: <Heart className="w-4 h-4 text-pink-500 fill-pink-500/20" /> },
+    { id: 'crema', icon: <Sun className="w-4 h-4 text-amber-700" /> },
     { id: 'rojo', icon: <Flame className="w-4 h-4 text-rose-500" /> },
     { id: 'cafe', icon: <Coffee className="w-4 h-4 text-amber-800" /> },
     { id: 'naranja', icon: <Sparkles className="w-4 h-4 text-orange-500" /> },
@@ -72,7 +76,7 @@ export const AdminSettings: React.FC = () => {
     <div className="space-y-6">
       {/* Selector de Temas */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {themeList.map(({ id, icon }) => {
             const t = THEMES[id];
             const isSelected = themeId === id;
